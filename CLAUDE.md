@@ -7,7 +7,17 @@ Painel central (Next.js 15 na Vercel + Postgres do Supabase via `postgres.js`) q
 - `supabase/migrations/`: SQL do schema `gestao` (RLS sempre ligado).
 - Segredos só em variáveis da Vercel (`DATABASE_URL`, `PAINEL_SENHA`), nunca no código.
 
+## Agentes (`.claude/agents/`) — chame sozinho, sem o Sidney pedir
+- **arquiteto**: antes de tabela, migração, RLS, tipo de evento novo ou ligar outro SaaS.
+- **designer**: depois de mudar tela, componente ou `globals.css`.
+- **financeiro**: ao mexer em `app/financeiro` ou consultas de receita/MRR/inadimplência.
+- **comercial**: ao mexer em `app/comercial` ou eventos de lead/cliente/teste.
+- **marketing**: ao mexer em `app/marketing` ou origem/campanha.
+- **operacoes**: ao mexer em `app/operacional`, rotinas agendadas ou quando eventos pararem.
+- **documentacao**: no fim de mudança que crie tela, evento, variável, rotina ou agente.
+- **revisor** e **testador**: sempre antes de abrir ou atualizar um PR; corrija o que apontarem.
+- Chame só os agentes ligados ao que mudou, em paralelo quando possível.
+
 ## Regras
-- Antes de abrir ou atualizar um PR, chame os agentes **revisor** e **testador** e corrija o que apontarem.
 - Respostas e textos em português, curtos. Explicações ao Sidney em passo a passo simples.
 - Gaste poucos tokens: leia só os arquivos necessários.
