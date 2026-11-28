@@ -57,15 +57,35 @@ function Tema() {
   );
 }
 
+// Inclina levemente os cartões em relevo ao passar o mouse (efeito 3D). Desligado no celular e para quem prefere menos movimento.
+function Inclinar() {
+  const caminho = usePathname();
+  const busca = useSearchParams().toString();
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || matchMedia("(hover: none)").matches) return;
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".rel"));
+    const mover = (e: MouseEvent) => {
+      const c = e.currentTarget as HTMLElement, r = c.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      c.style.transform = `perspective(1000px) rotateX(${-y * 4}deg) rotateY(${x * 4}deg) translateY(-3px)`;
+    };
+    const sair = (e: MouseEvent) => { (e.currentTarget as HTMLElement).style.transform = ""; };
+    cards.forEach((c) => { c.addEventListener("mousemove", mover); c.addEventListener("mouseleave", sair); });
+    return () => cards.forEach((c) => { c.removeEventListener("mousemove", mover); c.removeEventListener("mouseleave", sair); });
+  }, [caminho, busca]);
+  return null;
+}
+
 export function Barra({ produtos }: { produtos: { id: string; nome: string }[] }) {
   return (
     <header className="barra">
-      <Link href="/" className="marca"><b aria-hidden="true">C</b><span>Central de Gestão</span></Link>
+      <Link href="/" className="marca"><b aria-hidden="true">C</b><span>CENTRAL</span></Link>
       <Suspense><Links /></Suspense>
       <div className="ctl">
         <Suspense><Sistema produtos={produtos} /></Suspense>
         <Tema />
       </div>
+      <Suspense><Inclinar /></Suspense>
     </header>
   );
 }
