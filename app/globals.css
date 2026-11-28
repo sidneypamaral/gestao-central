@@ -11,3 +11,12 @@ h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:16px; margin:28px 0 10px; 
 table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--bd); border-radius:10px; overflow:hidden; font-size:14px; }
 th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--bd); } th { color:var(--mut); font-weight:500; }
 td.n, th.n { text-align:right; font-variant-numeric: tabular-nums; }
+a { color: var(--ac); }
+form.linha, .linha { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
+input, select, button { font: inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--bd); background:var(--card); color:var(--tx); }
+button { background:var(--ac); color:#fff; border-color:var(--ac); cursor:pointer; }
+button.sec { background:transparent; color:var(--ac); padding:4px 8px; font-size:13px; }
+.erro { color:#dc2626; width:100%; margin:4px 0; }
+.chave { width:100%; } .chave code { display:block; margin-top:6px; word-break:break-all; font-size:13px; }
+.duas { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+nav { display:flex; gap:16px; margin:0 0 16px; font-size:14px; }
