@@ -20,10 +20,20 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
   };
 
   switch (tipo) {
-    case "lead.criado":
-      await sql`insert into gestao.leads (produto_id, id_externo, nome, email, telefone, origem, criado_em)
+    case "lead.criado": {
+      // Campanha do link rastreado (utm_campaign): criada na primeira vez, depois só reaproveitada.
+      const nomeCampanha = typeof d.campanha === "string" && d.campanha.trim() ? d.campanha.trim().slice(0, 80) : null;
+      let campanhaId: string | null = null;
+      if (nomeCampanha) {
+        const [c] = await sql`insert into gestao.campanhas (produto_id, nome, canal)
+          values (${produtoId}, ${nomeCampanha}, ${d.origem ?? "outro"})
+          on conflict (produto_id, nome) do update set nome = excluded.nome
+          returning id`;
+        campanhaId = c.id as string;
+      }
+      await sql`insert into gestao.leads (produto_id, id_externo, nome, email, telefone, origem, meio, campanha_id, criado_em)
         values (${produtoId}, ${d.lead_id ?? null}, ${d.nome ?? null}, ${d.email ?? null}, ${d.telefone ?? null},
-                ${d.origem ?? null}, ${ocorridoEm})
+                ${d.origem ?? null}, ${d.meio ?? null}, ${campanhaId}, ${ocorridoEm})
         on conflict (produto_id, id_externo) do nothing`;
       // Lead de quem já é cliente entra no funil na etapa certa.
       if (d.email)
@@ -32,6 +42,7 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
           where l.produto_id = ${produtoId} and c.produto_id = ${produtoId} and lower(c.email) = lower(${d.email})
             and lower(l.email) = lower(${d.email}) and l.etapa in ('novo','contato')`;
       break;
+    }
     case "cliente.criado":
       await cliente();
       break;

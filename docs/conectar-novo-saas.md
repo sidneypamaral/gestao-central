@@ -16,7 +16,7 @@
 | `assinatura.iniciada` / `assinatura.alterada` | `cliente_id`, `assinatura_id`, `nome`, `email`, `status` (trial, ativa, inadimplente, cancelada), `valor_mensal` |
 | `assinatura.cancelada` | `assinatura_id` |
 | `pagamento.aprovado` / `pagamento.falhou` | `cliente_id`, `pagamento_id`, `valor`, `meio` |
-| `lead.criado` | `nome`, `email`, `telefone`, `origem` (ex.: `site`, `google`, `instagram`) |
+| `lead.criado` | `nome`, `email`, `telefone`, `origem` (ex.: `Site (direto)`, `Google`, `Instagram (anúncio)`); opcionais `meio` (utm_medium) e `campanha` (utm_campaign, cria a campanha sozinha em Marketing) |
 | `suporte.aberto` | `cliente_id`, `titulo` |
 | `oferta.anunciada` / `oferta.aceita` | `cliente_id`, `nome`, `desconto_pct`, `plano` (aceita vira tarefa de cobrança) |
 
