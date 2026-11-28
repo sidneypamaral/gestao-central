@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, pct, brl, type Busca } from "@/lib/filtro";
-import { Topo, Periodo, Painel, Barrinhas, Vazio, Destaques } from "@/components/ui";
+import { Topo, Periodo, Painel, Barrinhas, Vazio, Blocos, Indicadores } from "@/components/ui";
 import { dadosLeads } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
@@ -21,13 +21,19 @@ export default async function Marketing({ searchParams }: { searchParams: Busca 
   const totalLeads = funil.reduce((t, e) => t + e.n, 0), totalGanhos = funil.find((e) => e.etapa === "ganho")?.n ?? 0;
   return (
     <>
-      <Topo titulo="Marketing" sub="De onde vêm os clientes" direita={<Periodo dias={f.dias} produto={f.produto} caminho="/marketing" />}>
-        <Destaques itens={[
-          ["Leads", String(totalLeads), `últimos ${f.dias} dias`], ["Viraram clientes", String(totalGanhos), `${pct(totalGanhos, totalLeads)}% de conversão`],
-          ["Melhor origem", origens[0]?.origem ?? "—", origens[0] ? `${origens[0].leads} leads` : "sem dados"], ["Campanhas", String(nc.n), "cadastradas"],
-        ]} />
-      </Topo>
+      <Topo titulo={`Marketing · últimos ${f.dias} dias`}
+        hero={{ rotulo: "Leads no período", valor: String(totalLeads), delta: `${pct(totalGanhos, totalLeads)}% conversão` }}
+        direita={<>
+          <Periodo dias={f.dias} produto={f.produto} caminho="/marketing" />
+          <Blocos titulo="Principais origens" proporcional itens={origens.slice(0, 4).map((o, i) => ({ n: o.leads, nome: o.origem, destaque: i === 0 }))} />
+        </>} />
       <div className="corpo">
+        <Indicadores itens={[
+          ["Viraram clientes", String(totalGanhos), `${pct(totalGanhos, totalLeads)}% de conversão`, false, "alvo", true],
+          ["Melhor origem", origens[0]?.origem ?? "—", origens[0] ? `${origens[0].leads} leads` : "sem dados", false, "megafone"],
+          ["Origens ativas", String(origens.length), "canais trazendo leads", false, "funil"],
+          ["Campanhas", String(nc.n), "cadastradas", false, "ticket"],
+        ]} />
       <div className="g duas">
         <Painel titulo="Origem dos leads" desc={`Últimos ${f.dias} dias`}><Barrinhas itens={origens.map((o) => ({ nome: o.origem, n: o.leads }))} vazio="Nenhum lead no período." /></Painel>
         <Painel titulo="Conversão por origem" desc="Quantos leads viraram clientes">

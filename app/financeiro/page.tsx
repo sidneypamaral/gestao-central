@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, brl, pct, rotuloMes, data, type Busca } from "@/lib/filtro";
-import { Topo, Painel, Kpis, Barras, Vazio, Destaques } from "@/components/ui";
+import { Topo, Painel, Barras, Vazio, Blocos, Indicadores } from "@/components/ui";
 import { SeletorProduto } from "@/components/form";
 import { lancarCusto } from "../actions";
 
@@ -34,25 +34,35 @@ export default async function Financeiro({ searchParams }: { searchParams: Busca
 
   return (
     <>
-      <Topo titulo="Financeiro" sub="Receita, custos e resultado do mês">
-        <Destaques itens={[
-          ["MRR", brl(k.mrr), "receita recorrente"], ["Receita do mês", brl(receita), "pagamentos aprovados"],
-          ["Custos do mês", brl(k.custos), "lançados até agora"], ["Resultado", brl(resultado), `margem de ${pct(resultado, receita)}%`, resultado < 0],
-        ]} />
-      </Topo>
+      <Topo titulo="Financeiro · mês atual"
+        hero={{ rotulo: "Resultado do mês", valor: brl(resultado), delta: `margem ${pct(resultado, receita)}%`, deltaNeg: resultado < 0,
+          serie: meses.map((m) => Number(m.receita) - Number(m.custos)) }}
+        direita={<Blocos titulo="Composição do mês" itens={[
+          { n: brl(receita), nome: "receita" }, { n: brl(k.custos), nome: "custos" }, { n: brl(k.mrr), nome: "MRR", destaque: true },
+        ]} />} />
       <div className="corpo">
-      <div className="g hero">
+        <Indicadores itens={[
+          ["Clientes ativos", String(k.ativos), "assinaturas pagas", false, "pessoas"],
+          ["Ticket médio", brl(k.ativos ? Number(k.mrr) / k.ativos : 0), "por cliente, por mês", false, "ticket"],
+          ["Cancelamentos", String(k.cancel), "neste mês", k.cancel > 0, "saida"],
+          ["Churn do mês", `${pct(k.cancel, k.ativos + k.cancel)}%`, "clientes que saíram", k.cancel > 0, "alerta"],
+        ]} />
+        <div className="g duas">
         <Painel titulo="Receita x custos" desc="Pagamentos aprovados e custos lançados, por mês">
           <Barras a={meses.map((m) => Number(m.receita))} b={meses.map((m) => Number(m.custos))} rotulos={meses.map((m) => rotuloMes(m.mes))} />
         </Painel>
-        <Painel titulo="Indicadores" desc="Mês atual">
-          <Kpis itens={[
-            ["Clientes ativos", String(k.ativos)], ["Ticket médio", brl(k.ativos ? Number(k.mrr) / k.ativos : 0)],
-            ["Cancelamentos", String(k.cancel), k.cancel > 0], ["Churn do mês", `${pct(k.cancel, k.ativos + k.cancel)}%`, k.cancel > 0],
-          ]} />
+        <Painel titulo="Assinaturas por plano" desc="Clientes ativos hoje">
+          {planos.length === 0 ? <Vazio>Nenhuma assinatura ativa ainda.</Vazio> : (
+            <table>
+              <thead><tr><th>Plano</th><th className="n">Clientes</th><th className="n">MRR</th></tr></thead>
+              <tbody>{planos.map((p) => (
+                <tr key={p.plano}><td>{p.plano}</td><td className="n">{p.clientes}</td><td className="n">{brl(p.mrr, true)}</td></tr>
+              ))}</tbody>
+            </table>
+          )}
         </Painel>
-      </div>
-      <div className="g duas">
+        </div>
+      <div className="g">
         <Painel titulo="Custos do mês" desc="Lance cada gasto para ver o resultado real">
           <form action={lancarCusto} className="acao">
             <select name="categoria" required defaultValue="" aria-label="Categoria">
@@ -73,16 +83,6 @@ export default async function Financeiro({ searchParams }: { searchParams: Busca
                   <td>{c.categoria}{c.descricao ? ` · ${c.descricao}` : ""}{c.produto ? <span className="mut"> · {c.produto}</span> : null}</td>
                   <td className="n">{data(c.competencia)}</td><td className="n">{brl(c.valor, true)}</td>
                 </tr>
-              ))}</tbody>
-            </table>
-          )}
-        </Painel>
-        <Painel titulo="Assinaturas por plano" desc="Clientes ativos hoje">
-          {planos.length === 0 ? <Vazio>Nenhuma assinatura ativa ainda.</Vazio> : (
-            <table>
-              <thead><tr><th>Plano</th><th className="n">Clientes</th><th className="n">MRR</th></tr></thead>
-              <tbody>{planos.map((p) => (
-                <tr key={p.plano}><td>{p.plano}</td><td className="n">{p.clientes}</td><td className="n">{brl(p.mrr, true)}</td></tr>
               ))}</tbody>
             </table>
           )}

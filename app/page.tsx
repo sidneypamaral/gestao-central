@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, brl, pct, rotuloMes, type Busca } from "@/lib/filtro";
-import { Topo, Periodo, Painel, Kpis, Linha, Barrinhas, Destaques, ProximoPasso, Vazio } from "@/components/ui";
+import { Topo, Periodo, Painel, Barrinhas, Blocos, Agora, Indicadores, Linha, Vazio } from "@/components/ui";
 import { dadosLeads, mrrMensal, prazoTag, alertasClientes, alertaTag } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
@@ -34,12 +34,6 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
   const n = (e: string) => leads.funil.find((x) => x.etapa === e)?.n ?? 0;
   const captacao = leads.funil.reduce((s, e) => s + e.n, 0);
   const clientes = n("ganho"), trial = n("trial") + clientes, contato = n("contato") + trial;
-  const jornada: [string, string, string?][] = [
-    ["Captação", String(captacao), "leads no período"],
-    ["Contato", String(contato), `${pct(contato, captacao)}% da etapa anterior`],
-    ["Trial", String(trial), `${pct(trial, contato)}% da etapa anterior`],
-    ["Clientes", String(clientes), `${pct(clientes, trial)}% da etapa anterior`],
-  ];
 
   // Próximo passo: a ação mais urgente, calculada a partir dos dados.
   const { cobrar, testes } = k;
@@ -60,48 +54,46 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
 
   return (
     <>
-      <Topo titulo="Visão geral" sub={`Do lead ao cliente, nos últimos ${f.dias} dias (pela etapa atual de cada lead)`} direita={<Periodo dias={f.dias} produto={f.produto} caminho="/" />}>
-        <Destaques itens={jornada} etapas />
-        <ProximoPasso {...passo} />
-      </Topo>
+      <Topo titulo={`Visão geral · últimos ${f.dias} dias`}
+        hero={{ rotulo: "Receita recorrente mensal (MRR)", valor: brl(mrr), delta: variacao !== null ? `${variacao >= 0 ? "+" : ""}${variacao}% no mês` : undefined, deltaNeg: (variacao ?? 0) < 0, serie: valores }}
+        direita={<>
+          <Periodo dias={f.dias} produto={f.produto} caminho="/" />
+          <Blocos titulo="Do lead ao cliente (pela etapa atual de cada lead)" proporcional
+            itens={[{ n: captacao, nome: "leads" }, { n: contato, nome: "contato" }, { n: trial, nome: "trial" }, { n: clientes, nome: "clientes", destaque: true }]}
+            legenda={[`${pct(contato, captacao)}% → contato`, `${pct(trial, contato)}% → trial`, `${pct(clientes, trial)}% → cliente`]} />
+        </>} />
+      <Agora {...passo} />
       <div className="corpo">
-        <div className="g hero">
-          <Painel titulo="Receita recorrente mensal (MRR)" desc="Quanto entra todo mês com as assinaturas ativas">
-            <div className="mrr-num">
-              {brl(mrr)}
-              {variacao !== null && <span className={`var ${variacao < 0 ? "neg" : ""}`}>{variacao >= 0 ? "+" : ""}{variacao}% no mês</span>}
-            </div>
-            <Linha valores={valores} rotulos={serie.map((s) => rotuloMes(s.mes))} />
-          </Painel>
-          <Painel titulo="Este mês" desc={mes[0].toUpperCase() + mes.slice(1)}>
-            <Kpis itens={[
-              ["Clientes ativos", String(k.ativos)], ["Receita", brl(k.receita)],
-              ["Custos", brl(k.custos)], ["Resultado", brl(resultado), resultado < 0],
-              ["Cancelamentos", String(k.cancel), k.cancel > 0], ["Tarefas atrasadas", String(k.atrasadas), k.atrasadas > 0],
-            ]} />
-          </Painel>
-        </div>
+        <Indicadores itens={[
+          ["Clientes ativos", String(k.ativos), `${k.cancel} ${k.cancel === 1 ? "cancelamento" : "cancelamentos"} no mês`, false, "pessoas"],
+          ["Receita do mês", brl(k.receita), "pagamentos aprovados", false, "entrada", true],
+          ["Custos do mês", brl(k.custos), "lançados até agora", false, "saida"],
+          ["Resultado", brl(resultado), mes, resultado < 0, "resultado", resultado >= 0],
+        ]} />
         <div className="g duas">
-          <Painel titulo="De onde vêm os leads" desc={`Últimos ${f.dias} dias`}>
-            <Barrinhas itens={leads.origens.map((o) => ({ nome: o.origem, n: o.leads }))} vazio="Nenhum lead no período." />
-          </Painel>
-          <section className="p" id="atencao">
+          <section className="p relevo rel" id="atencao">
             <h2>Precisa de atenção</h2>
             <p className="d">Pagamentos e testes vencendo, e tarefas com prazo mais próximo</p>
             {tarefas.length + alertas.length === 0 ? <Vazio>Nada pendente.</Vazio> : (
               <table><tbody>
                 {alertas.map((a, i) => {
                   const [c, txt] = alertaTag(a.tipo, a.dias);
-                  return <tr key={`a${i}`}><td>{a.nome}</td><td className="n"><span className={`tag ${c}`}>{txt}</span></td></tr>;
+                  return <tr key={`a${i}`}><td><span className={`ponto ${c}`} />{a.nome}</td><td className="n"><span className={`tag ${c}`}>{txt}</span></td></tr>;
                 })}
                 {tarefas.map((t, i) => {
                   const [c, txt] = prazoTag(t.prazo);
-                  return <tr key={i}><td>{t.titulo}{t.tipo === "suporte" ? <span className="mut"> · suporte</span> : null}</td><td className="n"><span className={`tag ${c}`}>{txt}</span></td></tr>;
+                  return <tr key={i}><td><span className={`ponto ${c}`} />{t.titulo}{t.tipo === "suporte" ? <span className="mut"> · suporte</span> : null}</td><td className="n"><span className={`tag ${c}`}>{txt}</span></td></tr>;
                 })}
               </tbody></table>
             )}
           </section>
+          <Painel titulo="De onde vêm os leads" desc={`Últimos ${f.dias} dias`}>
+            <Barrinhas itens={leads.origens.map((o) => ({ nome: o.origem, n: o.leads }))} vazio="Nenhum lead no período." />
+          </Painel>
         </div>
+        <Painel titulo="MRR nos últimos 6 meses" desc="Assinaturas ativas no fim de cada mês">
+          <Linha valores={valores} rotulos={serie.map((s) => rotuloMes(s.mes))} />
+        </Painel>
       </div>
     </>
   );
