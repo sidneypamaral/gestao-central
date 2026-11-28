@@ -7,7 +7,7 @@ Painel que consolida finanças, vendas, marketing e operação de todos os SaaS 
 - **Integração:** cada SaaS envia eventos para `POST /api/eventos` com o header `x-api-key`.
 
 ## Eventos aceitos
-`lead.criado`, `cliente.criado`, `assinatura.iniciada`, `assinatura.alterada`, `assinatura.cancelada`, `pagamento.aprovado`, `pagamento.falhou`, `suporte.aberto`.
+`lead.criado`, `cliente.criado`, `assinatura.iniciada`, `assinatura.alterada`, `assinatura.cancelada`, `pagamento.aprovado`, `pagamento.falhou`, `suporte.aberto`, `oferta.anunciada`, `oferta.aceita` (vira tarefa "Criar cobrança com desconto").
 
 ```json
 { "tipo": "pagamento.aprovado", "ocorrido_em": "2026-11-27T10:00:00Z",

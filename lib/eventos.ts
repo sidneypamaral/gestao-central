@@ -69,6 +69,20 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
         values (${produtoId}, ${cid}, 'suporte', ${d.titulo ?? "Chamado de suporte"})`;
       break;
     }
+    case "oferta.anunciada":
+      // Só registro (fica em gestao.eventos): a oferta de fim de teste foi mostrada/enviada ao cliente.
+      break;
+    case "oferta.aceita": {
+      // Cliente aceitou a oferta: vira tarefa para criar a cobrança com desconto.
+      const cid = await cliente();
+      // Sem duplicar: se já há tarefa aberta de cobrança para o cliente, não cria outra.
+      await sql`insert into gestao.tarefas (produto_id, cliente_id, tipo, titulo)
+        select ${produtoId}, ${cid}, 'operacional',
+               ${`Criar cobrança com ${d.desconto_pct ?? 20}% de desconto: ${d.nome ?? "cliente"} (plano ${d.plano ?? "?"})`}
+        where not exists (select 1 from gestao.tarefas where produto_id = ${produtoId} and cliente_id is not distinct from ${cid}
+                            and titulo like 'Criar cobrança com%' and status <> 'concluida')`;
+      break;
+    }
     default:
       return false;
   }

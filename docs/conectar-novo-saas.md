@@ -16,5 +16,6 @@
 | `pagamento.aprovado` / `pagamento.falhou` | `cliente_id`, `pagamento_id`, `valor`, `meio` |
 | `lead.criado` | `nome`, `email`, `telefone`, `origem` (ex.: `site`, `google`, `instagram`) |
 | `suporte.aberto` | `cliente_id`, `titulo` |
+| `oferta.anunciada` / `oferta.aceita` | `cliente_id`, `nome`, `desconto_pct`, `plano` (aceita vira tarefa de cobrança) |
 
 Reenviar o mesmo evento não duplica dados. Um lead avança no funil sozinho quando o mesmo e-mail vira trial ou cliente ativo.
