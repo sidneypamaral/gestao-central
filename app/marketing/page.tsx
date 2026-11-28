@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, pct, brl, type Busca } from "@/lib/filtro";
-import { Topo, Periodo, Painel, Rosca, Vazio } from "@/components/ui";
+import { Topo, Periodo, Painel, Barrinhas, Vazio, Destaques } from "@/components/ui";
 import { dadosLeads } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +17,18 @@ export default async function Marketing({ searchParams }: { searchParams: Busca 
       group by c.id order by leads desc limit 20`,
   ]);
 
+  const totalLeads = origens.reduce((t, o) => t + o.leads, 0), totalGanhos = origens.reduce((t, o) => t + o.ganhos, 0);
   return (
     <>
-      <Topo titulo="Marketing" sub="De onde vêm os clientes">
-        <Periodo dias={f.dias} produto={f.produto} caminho="/marketing" />
+      <Topo titulo="Marketing" sub="De onde vêm os clientes" direita={<Periodo dias={f.dias} produto={f.produto} caminho="/marketing" />}>
+        <Destaques itens={[
+          ["Leads", String(totalLeads), `últimos ${f.dias} dias`], ["Viraram clientes", String(totalGanhos), `${pct(totalGanhos, totalLeads)}% de conversão`],
+          ["Melhor origem", origens[0]?.origem ?? "—", origens[0] ? `${origens[0].leads} leads` : "sem dados"], ["Campanhas", String(campanhas.length), "cadastradas"],
+        ]} />
       </Topo>
-      <div className="g duas topo0">
-        <Painel titulo="Origem dos leads" desc={`Últimos ${f.dias} dias`}><Rosca itens={origens.map((o) => ({ nome: o.origem, n: o.leads }))} /></Painel>
+      <div className="corpo">
+      <div className="g duas">
+        <Painel titulo="Origem dos leads" desc={`Últimos ${f.dias} dias`}><Barrinhas itens={origens.map((o) => ({ nome: o.origem, n: o.leads }))} vazio="Nenhum lead no período." /></Painel>
         <Painel titulo="Conversão por origem" desc="Quantos leads viraram clientes">
           {origens.length === 0 ? <Vazio>Nenhum lead no período.</Vazio> : (
             <table>
@@ -50,6 +55,7 @@ export default async function Marketing({ searchParams }: { searchParams: Busca 
             </table></div>
           )}
         </Painel>
+      </div>
       </div>
     </>
   );

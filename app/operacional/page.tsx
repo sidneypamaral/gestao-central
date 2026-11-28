@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, type Busca } from "@/lib/filtro";
-import { Topo, Painel, Kpis, Vazio } from "@/components/ui";
+import { Topo, Painel, Vazio, Destaques } from "@/components/ui";
 import { SeletorProduto } from "@/components/form";
 import { prazoTag } from "@/lib/consultas";
 import { criarTarefa, concluirTarefa } from "../actions";
@@ -23,8 +23,14 @@ export default async function Operacional({ searchParams }: { searchParams: Busc
 
   return (
     <>
-      <Topo titulo="Operacional" sub="Tarefas do dia a dia e suporte" />
-      <div className="g lado">
+      <Topo titulo="Operacional" sub="Tarefas do dia a dia e suporte">
+        <Destaques itens={[
+          ["Abertas", String(k.abertas), "no total"], ["Atrasadas", String(k.atrasadas), "passaram do prazo", k.atrasadas > 0],
+          ["Para hoje", String(k.hoje), "vencem hoje"], ["Suporte", String(k.suporte), "chamados abertos"],
+        ]} />
+      </Topo>
+      <div className="corpo">
+      <div className="g">
         <Painel titulo="Tarefas e suporte" desc="Abertas, da mais urgente para a menos urgente">
           <form action={criarTarefa} className="acao">
             <input name="titulo" placeholder="Nova tarefa" required aria-label="Nova tarefa" />
@@ -49,12 +55,7 @@ export default async function Operacional({ searchParams }: { searchParams: Busc
             </table></div>
           )}
         </Painel>
-        <Painel titulo="Resumo" desc="Tarefas em aberto">
-          <Kpis itens={[
-            ["Abertas", String(k.abertas)], ["Atrasadas", String(k.atrasadas), k.atrasadas > 0],
-            ["Para hoje", String(k.hoje)], ["Suporte", String(k.suporte)],
-          ]} />
-        </Painel>
+      </div>
       </div>
     </>
   );

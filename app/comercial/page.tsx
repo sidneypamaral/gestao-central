@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, pct, data, type Busca } from "@/lib/filtro";
-import { Topo, Periodo, Painel, Kpis, Funil, TagEtapa, Vazio } from "@/components/ui";
+import { Topo, Periodo, Painel, Funil, TagEtapa, Vazio, Destaques } from "@/components/ui";
 import { dadosLeads } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
@@ -19,19 +19,15 @@ export default async function Comercial({ searchParams }: { searchParams: Busca 
 
   return (
     <>
-      <Topo titulo="Comercial" sub="Do primeiro contato ao cliente pagante">
-        <Periodo dias={f.dias} produto={f.produto} caminho="/comercial" />
+      <Topo titulo="Comercial" sub="Do primeiro contato ao cliente pagante" direita={<Periodo dias={f.dias} produto={f.produto} caminho="/comercial" />}>
+        <Destaques itens={[
+          ["Leads novos", String(total), `últimos ${f.dias} dias`], ["Conversão", `${pct(n("ganho"), total)}%`, "viraram clientes"],
+          ["Trials ativos", String(k.trials), "testando hoje"], ["Perdidos", String(n("perdido")), "no período", n("perdido") > 0],
+        ]} />
       </Topo>
-      <div className="g duas topo0">
+      <div className="corpo">
+      <div className="g duas">
         <Painel titulo="Funil comercial" desc={`Leads criados nos últimos ${f.dias} dias, pela etapa atual`}><Funil etapas={funil} /></Painel>
-        <Painel titulo="Indicadores" desc={`Últimos ${f.dias} dias`}>
-          <Kpis itens={[
-            ["Leads novos", String(total)], ["Taxa de conversão", `${pct(n("ganho"), total)}%`],
-            ["Trials ativos hoje", String(k.trials)], ["Perdidos", String(n("perdido")), n("perdido") > 0],
-          ]} />
-        </Painel>
-      </div>
-      <div className="g">
         <Painel titulo="Leads recentes" desc="Os 15 últimos que chegaram">
           {recentes.length === 0 ? <Vazio>Nenhum lead ainda. Eles chegam sozinhos pelos sistemas conectados.</Vazio> : (
             <div className="rolar"><table>
@@ -45,6 +41,7 @@ export default async function Comercial({ searchParams }: { searchParams: Busca 
             </table></div>
           )}
         </Painel>
+      </div>
       </div>
     </>
   );

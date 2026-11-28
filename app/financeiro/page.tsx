@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, brl, pct, rotuloMes, data, type Busca } from "@/lib/filtro";
-import { Topo, Painel, Kpis, Barras, Vazio } from "@/components/ui";
+import { Topo, Painel, Kpis, Barras, Vazio, Destaques } from "@/components/ui";
 import { SeletorProduto } from "@/components/form";
 import { lancarCusto } from "../actions";
 
@@ -34,16 +34,21 @@ export default async function Financeiro({ searchParams }: { searchParams: Busca
 
   return (
     <>
-      <Topo titulo="Financeiro" sub="Receita, custos e resultado" />
+      <Topo titulo="Financeiro" sub="Receita, custos e resultado do mês">
+        <Destaques itens={[
+          ["MRR", brl(k.mrr), "receita recorrente"], ["Receita do mês", brl(receita), "pagamentos aprovados"],
+          ["Custos do mês", brl(k.custos), "lançados até agora"], ["Resultado", brl(resultado), `margem de ${pct(resultado, receita)}%`, resultado < 0],
+        ]} />
+      </Topo>
+      <div className="corpo">
       <div className="g hero">
         <Painel titulo="Receita x custos" desc="Pagamentos aprovados e custos lançados, por mês">
           <Barras a={meses.map((m) => Number(m.receita))} b={meses.map((m) => Number(m.custos))} rotulos={meses.map((m) => rotuloMes(m.mes))} />
         </Painel>
-        <Painel titulo="Resumo do mês" desc="Mês atual">
+        <Painel titulo="Indicadores" desc="Mês atual">
           <Kpis itens={[
-            ["MRR", brl(k.mrr)], ["Ticket médio", brl(k.ativos ? Number(k.mrr) / k.ativos : 0)],
-            ["Resultado", brl(resultado), resultado < 0], ["Margem", `${pct(resultado, receita)}%`, resultado < 0],
-            ["Cancelamentos", String(k.cancel), k.cancel > 0], ["Churn", `${pct(k.cancel, k.ativos + k.cancel)}%`, k.cancel > 0],
+            ["Clientes ativos", String(k.ativos)], ["Ticket médio", brl(k.ativos ? Number(k.mrr) / k.ativos : 0)],
+            ["Cancelamentos", String(k.cancel), k.cancel > 0], ["Churn do mês", `${pct(k.cancel, k.ativos + k.cancel)}%`, k.cancel > 0],
           ]} />
         </Painel>
       </div>
@@ -82,6 +87,7 @@ export default async function Financeiro({ searchParams }: { searchParams: Busca
             </table>
           )}
         </Painel>
+      </div>
       </div>
     </>
   );
