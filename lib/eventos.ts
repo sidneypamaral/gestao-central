@@ -10,8 +10,9 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
       insert into gestao.clientes (produto_id, id_externo, nome, email, documento)
       values (${produtoId}, ${d.cliente_id}, ${d.nome ?? d.cliente_id}, ${d.email ?? null}, ${d.documento ?? null})
       on conflict (produto_id, id_externo) do update
-        set nome = coalesce(excluded.nome, gestao.clientes.nome),
-            email = coalesce(excluded.email, gestao.clientes.email)
+        set nome = coalesce(${d.nome ?? null}::text, gestao.clientes.nome),
+            email = coalesce(excluded.email, gestao.clientes.email),
+            documento = coalesce(excluded.documento, gestao.clientes.documento)
       returning id`;
     return c.id as string;
   };
@@ -27,12 +28,15 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
     case "assinatura.iniciada": {
       const cid = await cliente();
       await sql`insert into gestao.assinaturas (produto_id, cliente_id, id_externo, status, valor_mensal, iniciada_em)
-        values (${produtoId}, ${cid}, ${d.assinatura_id}, ${d.status ?? "ativa"}, ${d.valor_mensal ?? 0}, ${ocorridoEm})`;
+        values (${produtoId}, ${cid}, ${d.assinatura_id}, ${d.status ?? "ativa"}, ${d.valor_mensal ?? 0}, ${ocorridoEm})
+        on conflict (produto_id, id_externo) do update
+          set status = excluded.status, valor_mensal = excluded.valor_mensal`;
       break;
     }
     case "assinatura.alterada":
       await sql`update gestao.assinaturas
-        set status = coalesce(${d.status ?? null}, status), valor_mensal = coalesce(${d.valor_mensal ?? null}, valor_mensal)
+        set status = coalesce(${d.status ?? null}, status), valor_mensal = coalesce(${d.valor_mensal ?? null}, valor_mensal),
+            cancelada_em = case when ${d.status ?? null}::text = 'cancelada' then ${ocorridoEm}::timestamptz else cancelada_em end
         where produto_id = ${produtoId} and id_externo = ${d.assinatura_id}`;
       break;
     case "assinatura.cancelada":
@@ -44,7 +48,8 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
       const cid = await cliente();
       await sql`insert into gestao.pagamentos (produto_id, cliente_id, id_externo, valor, status, meio, pago_em)
         values (${produtoId}, ${cid}, ${d.pagamento_id ?? null}, ${d.valor ?? 0},
-                ${tipo === "pagamento.aprovado" ? "aprovado" : "falhou"}, ${d.meio ?? null}, ${ocorridoEm})`;
+                ${tipo === "pagamento.aprovado" ? "aprovado" : "falhou"}, ${d.meio ?? null}, ${ocorridoEm})
+        on conflict (produto_id, id_externo) do nothing`;
       break;
     }
     case "suporte.aberto": {
