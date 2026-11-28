@@ -1,5 +1,7 @@
 # Como ligar um novo SaaS à Central de Gestão
 
+> **Sistema novo, do zero?** Use o kit pronto em [`kit-novo-saas/`](../kit-novo-saas/LEIA-ME.md): já traz login, cobrança Asaas e a ligação com a central. Os passos abaixo são para um sistema que já existe.
+
 1. **Gerar a chave:** abra o painel > **Sistemas conectados**, digite o nome do sistema e clique em **Cadastrar e gerar chave**. Copie a chave (ela só aparece uma vez).
 2. **Escolher o jeito de enviar os dados:**
    - **SaaS com banco Supabase (recomendado):** peça ao Claude para adaptar `supabase/modelo-novo-saas.sql` às tabelas do novo sistema. O resultado é um SQL pronto para colar no **SQL Editor** do novo SaaS.

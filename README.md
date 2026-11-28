@@ -5,6 +5,7 @@ Painel que consolida finanças, vendas, marketing e operação de todos os SaaS 
 - **Banco:** Supabase `gestao-central`, schema `gestao` (ver `supabase/migrations`).
 - **Painel:** Next.js, protegido por senha (`PAINEL_SENHA`, usuário `admin`).
 - **Integração:** cada SaaS envia eventos para `POST /api/eventos` com o header `x-api-key`.
+- **SaaS novo:** comece pelo [`kit-novo-saas/`](kit-novo-saas/LEIA-ME.md) (login, Asaas e ligação prontos). Sistema que já existe: `docs/conectar-novo-saas.md`.
 
 ## Eventos aceitos
 `lead.criado`, `cliente.criado`, `assinatura.iniciada`, `assinatura.alterada`, `assinatura.cancelada`, `pagamento.aprovado`, `pagamento.falhou`, `suporte.aberto`, `oferta.anunciada`, `oferta.aceita` (vira tarefa "Criar cobrança com desconto").
