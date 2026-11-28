@@ -46,7 +46,7 @@ export function prazoTag(prazo: Date | string | null): [string, string] {
 // Mesma regra do alerta diário (supabase/alertas-diarios.sql).
 export function alertasClientes(f: Filtro) {
   return sql`
-    with hoje as (select (now() at time zone 'America/Fortaleza')::date d)
+    with hoje as (select (now() at time zone 'America/Sao_Paulo')::date d)
     select c.nome, a.status, a.vence_em, a.vence_em - hoje.d as dias,
       case when a.status = 'inadimplente' then 'inadimplente'
            when a.status = 'ativa' then 'atrasado' else 'teste' end as tipo

@@ -1,6 +1,6 @@
 -- Alertas diários (somente leitura). Uma linha por cliente que precisa de atenção; nenhuma linha = nada a avisar.
 -- Mesma regra do quadro "Precisa de atenção" do painel (lib/consultas.ts, alertasClientes).
-with hoje as (select (now() at time zone 'America/Fortaleza')::date d)
+with hoje as (select (now() at time zone 'America/Sao_Paulo')::date d)
 select p.nome as saas, c.nome as cliente, c.email,
   case when a.status = 'inadimplente' then 'inadimplente'
        when a.status = 'ativa' then 'pagamento atrasado' else 'fim do teste' end as alerta,
