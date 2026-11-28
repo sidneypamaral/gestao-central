@@ -19,8 +19,16 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
 
   switch (tipo) {
     case "lead.criado":
-      await sql`insert into gestao.leads (produto_id, nome, email, telefone, origem)
-        values (${produtoId}, ${d.nome ?? null}, ${d.email ?? null}, ${d.telefone ?? null}, ${d.origem ?? null})`;
+      await sql`insert into gestao.leads (produto_id, id_externo, nome, email, telefone, origem, criado_em)
+        values (${produtoId}, ${d.lead_id ?? null}, ${d.nome ?? null}, ${d.email ?? null}, ${d.telefone ?? null},
+                ${d.origem ?? null}, ${ocorridoEm})
+        on conflict (produto_id, id_externo) do nothing`;
+      // Lead de quem já é cliente entra no funil na etapa certa.
+      if (d.email)
+        await sql`update gestao.leads l set etapa = case a.status when 'ativa' then 'ganho' when 'trial' then 'trial' else l.etapa end
+          from gestao.clientes c join gestao.assinaturas a on a.cliente_id = c.id
+          where l.produto_id = ${produtoId} and c.produto_id = ${produtoId} and lower(c.email) = lower(${d.email})
+            and lower(l.email) = lower(${d.email}) and l.etapa in ('novo','contato')`;
       break;
     case "cliente.criado":
       await cliente();
@@ -60,6 +68,14 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
     }
     default:
       return false;
+  }
+  // Conversão automática do funil: lead com o mesmo e-mail avança quando vira trial ou assinante.
+  if (tipo.startsWith("assinatura.") && d.email) {
+    const etapa = d.status === "ativa" ? "ganho" : d.status === "trial" ? "trial" : null;
+    if (etapa)
+      await sql`update gestao.leads set etapa = ${etapa}
+        where produto_id = ${produtoId} and lower(email) = lower(${d.email})
+          and etapa <> 'ganho' and (${etapa} = 'ganho' or etapa in ('novo','contato'))`;
   }
   return true;
 }
