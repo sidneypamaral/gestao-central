@@ -27,7 +27,7 @@ const g = globalThis as unknown as { sql?: Sql };
 function conectar(): Sql {
   if (!g.sql) {
     if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL não configurada");
-    g.sql = postgres({ ...lerConexao(process.env.DATABASE_URL), ssl: "require", prepare: false, max: 5 });
+    g.sql = postgres({ ...lerConexao(process.env.DATABASE_URL), ssl: "require", prepare: false, max: 5, connection: { TimeZone: "America/Sao_Paulo" } });
   }
   return g.sql;
 }

@@ -8,7 +8,7 @@ function Resultado({ s }: { s: Estado }) {
   if (s.erro) return <p className="erro">{s.erro}</p>;
   if (!s.chave) return null;
   return (
-    <div className="card chave">
+    <div className="chave">
       <b>Chave de {s.nome}</b> (copie agora, ela não aparece de novo):
       <code>{s.chave}</code>
     </div>
@@ -18,9 +18,9 @@ function Resultado({ s }: { s: Estado }) {
 export function NovoProduto() {
   const [s, acao, pend] = useActionState<Estado, FormData>(criarProduto, {});
   return (
-    <form action={acao} className="linha">
-      <input name="nome" placeholder="Nome do novo sistema" required />
-      <button disabled={pend}>Cadastrar e gerar chave</button>
+    <form action={acao} className="acao">
+      <input name="nome" placeholder="Nome do novo sistema" required aria-label="Nome do novo sistema" />
+      <button className="btn" disabled={pend}>Cadastrar e gerar chave</button>
       <Resultado s={s} />
     </form>
   );
@@ -31,7 +31,7 @@ export function TrocarChave({ id }: { id: string }) {
   return (
     <form action={acao}>
       <input type="hidden" name="id" value={id} />
-      <button className="sec" disabled={pend}>Gerar nova chave</button>
+      <button className="btn sec" disabled={pend}>Gerar nova chave</button>
       <Resultado s={s} />
     </form>
   );
