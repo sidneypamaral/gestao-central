@@ -4,6 +4,8 @@ type Dados = Record<string, any>;
 
 // Aplica um evento recebido de um SaaS nas tabelas da central.
 export async function processarEvento(produtoId: string, tipo: string, ocorridoEm: string, d: Dados) {
+  // Vencimento (fim do teste ou próxima renovação): só aceita data AAAA-MM-DD; outro valor vira vazio.
+  const venceEm = typeof d.vence_em === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.vence_em) ? d.vence_em : null;
   const cliente = async () => {
     if (!d.cliente_id) return null;
     const [c] = await sql`
@@ -35,15 +37,16 @@ export async function processarEvento(produtoId: string, tipo: string, ocorridoE
       break;
     case "assinatura.iniciada": {
       const cid = await cliente();
-      await sql`insert into gestao.assinaturas (produto_id, cliente_id, id_externo, status, valor_mensal, iniciada_em)
-        values (${produtoId}, ${cid}, ${d.assinatura_id}, ${d.status ?? "ativa"}, ${d.valor_mensal ?? 0}, ${ocorridoEm})
+      await sql`insert into gestao.assinaturas (produto_id, cliente_id, id_externo, status, valor_mensal, iniciada_em, vence_em)
+        values (${produtoId}, ${cid}, ${d.assinatura_id}, ${d.status ?? "ativa"}, ${d.valor_mensal ?? 0}, ${ocorridoEm}, ${venceEm})
         on conflict (produto_id, id_externo) do update
-          set status = excluded.status, valor_mensal = excluded.valor_mensal`;
+          set status = excluded.status, valor_mensal = excluded.valor_mensal, vence_em = case when ${"vence_em" in d}::boolean then excluded.vence_em else gestao.assinaturas.vence_em end`;
       break;
     }
     case "assinatura.alterada":
       await sql`update gestao.assinaturas
         set status = coalesce(${d.status ?? null}, status), valor_mensal = coalesce(${d.valor_mensal ?? null}, valor_mensal),
+            vence_em = case when ${"vence_em" in d}::boolean then ${venceEm}::date else vence_em end,
             cancelada_em = case when ${d.status ?? null}::text = 'cancelada' then ${ocorridoEm}::timestamptz else cancelada_em end
         where produto_id = ${produtoId} and id_externo = ${d.assinatura_id}`;
       break;
