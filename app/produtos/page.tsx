@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import { Topo, Painel, Vazio } from "@/components/ui";
+import { Topo, Painel, Vazio, Destaques } from "@/components/ui";
 import { NovoProduto, TrocarChave } from "./novo";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,14 @@ export default async function Produtos() {
     from gestao.produtos p order by p.criado_em`;
   return (
     <>
-      <Topo titulo="Sistemas conectados" sub="Cada SaaS envia seus dados para a central" />
+      <Topo titulo="Sistemas conectados" sub="Cada SaaS envia seus dados para a central">
+        <Destaques itens={[
+          ["Sistemas", String(produtos.length), "cadastrados"],
+          ["Recebendo dados", String(produtos.filter((p) => p.ultimo).length), "já enviaram eventos"],
+          ["Eventos com erro", String(produtos.reduce((t, p) => t + Number(p.falhas), 0)), "não processados", produtos.some((p) => p.falhas > 0)],
+        ]} />
+      </Topo>
+      <div className="corpo">
       <div className="g">
         <Painel titulo="Cadastrar novo sistema" desc="Gera a chave de conexão. Depois siga o guia em docs/conectar-novo-saas.md.">
           <NovoProduto />
@@ -33,6 +40,7 @@ export default async function Produtos() {
             </table></div>
           )}
         </Painel>
+      </div>
       </div>
     </>
   );
