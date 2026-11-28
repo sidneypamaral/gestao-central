@@ -1,13 +1,13 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, pct, brl, type Busca } from "@/lib/filtro";
-import { Topo, Periodo, Painel, Barrinhas, Vazio, Blocos, Indicadores } from "@/components/ui";
+import { Topo, Periodo, Painel, Rosca, Vazio } from "@/components/ui";
 import { dadosLeads } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
 
 export default async function Marketing({ searchParams }: { searchParams: Busca }) {
   const f = await lerFiltro(searchParams);
-  const [{ origens, funil }, campanhas, [nc]] = await Promise.all([
+  const [{ origens }, campanhas] = await Promise.all([
     dadosLeads(f),
     sql`select c.nome, c.canal, c.orcamento,
         count(l.id)::int as leads, count(l.id) filter (where l.etapa = 'ganho')::int as ganhos
@@ -15,27 +15,15 @@ export default async function Marketing({ searchParams }: { searchParams: Busca 
         and l.criado_em >= now() - make_interval(days => ${f.dias})
       where true ${f.doProduto("c.produto_id")}
       group by c.id order by leads desc limit 20`,
-    sql`select count(*)::int as n from gestao.campanhas where true ${f.doProduto()}`,
   ]);
 
-  const totalLeads = funil.reduce((t, e) => t + e.n, 0), totalGanhos = funil.find((e) => e.etapa === "ganho")?.n ?? 0;
   return (
     <>
-      <Topo titulo={`Marketing · últimos ${f.dias} dias`}
-        hero={{ rotulo: "Leads no período", valor: String(totalLeads), delta: `${pct(totalGanhos, totalLeads)}% conversão` }}
-        direita={<>
-          <Periodo dias={f.dias} produto={f.produto} caminho="/marketing" />
-          <Blocos titulo="Principais origens" proporcional itens={origens.slice(0, 4).map((o, i) => ({ n: o.leads, nome: o.origem, destaque: i === 0 }))} />
-        </>} />
-      <div className="corpo">
-        <Indicadores itens={[
-          ["Viraram clientes", String(totalGanhos), `${pct(totalGanhos, totalLeads)}% de conversão`, false, "alvo", true],
-          ["Melhor origem", origens[0]?.origem ?? "—", origens[0] ? `${origens[0].leads} leads` : "sem dados", false, "megafone"],
-          ["Origens ativas", String(origens.length), "canais trazendo leads", false, "funil"],
-          ["Campanhas", String(nc.n), "cadastradas", false, "ticket"],
-        ]} />
-      <div className="g duas">
-        <Painel titulo="Origem dos leads" desc={`Últimos ${f.dias} dias`}><Barrinhas itens={origens.map((o) => ({ nome: o.origem, n: o.leads }))} vazio="Nenhum lead no período." /></Painel>
+      <Topo titulo="Marketing" sub="De onde vêm os clientes">
+        <Periodo dias={f.dias} produto={f.produto} caminho="/marketing" />
+      </Topo>
+      <div className="g duas topo0">
+        <Painel titulo="Origem dos leads" desc={`Últimos ${f.dias} dias`}><Rosca itens={origens.map((o) => ({ nome: o.origem, n: o.leads }))} /></Painel>
         <Painel titulo="Conversão por origem" desc="Quantos leads viraram clientes">
           {origens.length === 0 ? <Vazio>Nenhum lead no período.</Vazio> : (
             <table>
@@ -62,7 +50,6 @@ export default async function Marketing({ searchParams }: { searchParams: Busca 
             </table></div>
           )}
         </Painel>
-      </div>
       </div>
     </>
   );

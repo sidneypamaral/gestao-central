@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, pct, data, type Busca } from "@/lib/filtro";
-import { Topo, Periodo, Painel, Funil, TagEtapa, Vazio, Blocos, Indicadores } from "@/components/ui";
+import { Topo, Periodo, Painel, Kpis, Funil, TagEtapa, Vazio } from "@/components/ui";
 import { dadosLeads } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
@@ -19,24 +19,19 @@ export default async function Comercial({ searchParams }: { searchParams: Busca 
 
   return (
     <>
-      <Topo titulo={`Comercial · últimos ${f.dias} dias`}
-        hero={{ rotulo: "Leads novos", valor: String(total), delta: `${pct(n("ganho"), total)}% viraram clientes` }}
-        direita={<>
-          <Periodo dias={f.dias} produto={f.produto} caminho="/comercial" />
-          <Blocos titulo="Leads por etapa atual" proporcional itens={[
-            { n: n("novo"), nome: "novos" }, { n: n("contato"), nome: "contato" }, { n: n("trial"), nome: "trial" },
-            { n: n("ganho"), nome: "ganhos", destaque: true }, { n: n("perdido"), nome: "perdidos", neg: true },
-          ]} />
-        </>} />
-      <div className="corpo">
-        <Indicadores itens={[
-          ["Conversão", `${pct(n("ganho"), total)}%`, "leads que viraram clientes", false, "alvo", true],
-          ["Trials ativos", String(k.trials), "testando hoje", false, "relogio"],
-          ["Clientes no período", String(n("ganho")), `últimos ${f.dias} dias`, false, "pessoas"],
-          ["Perdidos", String(n("perdido")), "no período", n("perdido") > 0, "alerta"],
-        ]} />
-      <div className="g duas">
+      <Topo titulo="Comercial" sub="Do primeiro contato ao cliente pagante">
+        <Periodo dias={f.dias} produto={f.produto} caminho="/comercial" />
+      </Topo>
+      <div className="g duas topo0">
         <Painel titulo="Funil comercial" desc={`Leads criados nos últimos ${f.dias} dias, pela etapa atual`}><Funil etapas={funil} /></Painel>
+        <Painel titulo="Indicadores" desc={`Últimos ${f.dias} dias`}>
+          <Kpis itens={[
+            ["Leads novos", String(total)], ["Taxa de conversão", `${pct(n("ganho"), total)}%`],
+            ["Trials ativos hoje", String(k.trials)], ["Perdidos", String(n("perdido")), n("perdido") > 0],
+          ]} />
+        </Painel>
+      </div>
+      <div className="g">
         <Painel titulo="Leads recentes" desc="Os 15 últimos que chegaram">
           {recentes.length === 0 ? <Vazio>Nenhum lead ainda. Eles chegam sozinhos pelos sistemas conectados.</Vazio> : (
             <div className="rolar"><table>
@@ -50,7 +45,6 @@ export default async function Comercial({ searchParams }: { searchParams: Busca 
             </table></div>
           )}
         </Painel>
-      </div>
       </div>
     </>
   );
