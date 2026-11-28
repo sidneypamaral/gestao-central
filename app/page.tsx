@@ -1,7 +1,7 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, brl, rotuloMes, type Busca } from "@/lib/filtro";
 import { Topo, Periodo, Painel, Kpis, Linha, Funil, Rosca, Vazio } from "@/components/ui";
-import { dadosLeads, mrrMensal, prazoTag } from "@/lib/consultas";
+import { dadosLeads, mrrMensal, prazoTag, alertasClientes, alertaTag } from "@/lib/consultas";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +16,12 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
       (select coalesce(sum(valor),0) from gestao.pagamentos where status = 'aprovado' and pago_em >= date_trunc('month', now()) ${P()}) as receita,
       (select coalesce(sum(valor),0) from gestao.custos where competencia >= date_trunc('month', now()) ${P()}) as custos,
       (select count(*) from gestao.assinaturas where status = 'cancelada' and cancelada_em >= date_trunc('month', now()) ${P()})::int as cancel`;
-  const [serie, leads, tarefas] = await Promise.all([
+  const [serie, leads, tarefas, alertas] = await Promise.all([
     mrrMensal(f),
     dadosLeads(f),
     sql`select titulo, tipo, prazo from gestao.tarefas where status <> 'concluida' ${P()}
         order by prazo nulls last, criado_em limit 5`,
+    alertasClientes(f),
   ]);
   const mrr = Number(k.mrr);
   const valores = serie.map((s, i) => (i === serie.length - 1 ? mrr : Number(s.mrr)));
@@ -53,9 +54,13 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
       <div className="g tres">
         <Painel titulo="Funil comercial" desc={`Leads criados nos últimos ${f.dias} dias`}><Funil etapas={leads.funil} /></Painel>
         <Painel titulo="De onde vêm os leads" desc={`Últimos ${f.dias} dias`}><Rosca itens={leads.origens.map((o) => ({ nome: o.origem, n: o.leads }))} /></Painel>
-        <Painel titulo="Precisa de atenção" desc="Tarefas abertas com prazo mais próximo">
-          {tarefas.length === 0 ? <Vazio>Nada pendente. Crie tarefas em Operacional.</Vazio> : (
+        <Painel titulo="Precisa de atenção" desc="Clientes com pagamento ou teste vencendo e tarefas com prazo mais próximo">
+          {tarefas.length + alertas.length === 0 ? <Vazio>Nada pendente. Crie tarefas em Operacional.</Vazio> : (
             <table><tbody>
+              {alertas.map((a, i) => {
+                const [c, txt] = alertaTag(a.tipo, a.dias);
+                return <tr key={`a${i}`}><td>{a.tipo === "teste" ? "⏳ " : "💸 "}{a.nome}</td><td className="n"><span className={`tag ${c}`}>{txt}</span></td></tr>;
+              })}
               {tarefas.map((t, i) => {
                 const [c, txt] = prazoTag(t.prazo);
                 return <tr key={i}><td>{t.tipo === "suporte" ? "🎧 " : ""}{t.titulo}</td><td className="n"><span className={`tag ${c}`}>{txt}</span></td></tr>;

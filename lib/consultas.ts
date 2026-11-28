@@ -41,3 +41,28 @@ export function prazoTag(prazo: Date | string | null): [string, string] {
   if (dias === 0) return ["alerta", "Hoje"];
   return ["", dias === 1 ? "Amanhã" : `${dias} dias`];
 }
+
+// Alertas de clientes: inadimplente, pagamento atrasado e teste (trial) acabando em até 3 dias.
+// Mesma regra do alerta diário (supabase/alertas-diarios.sql).
+export function alertasClientes(f: Filtro) {
+  return sql`
+    with hoje as (select (now() at time zone 'America/Fortaleza')::date d)
+    select c.nome, a.status, a.vence_em, a.vence_em - hoje.d as dias,
+      case when a.status = 'inadimplente' then 'inadimplente'
+           when a.status = 'ativa' then 'atrasado' else 'teste' end as tipo
+    from gestao.assinaturas a join gestao.clientes c on c.id = a.cliente_id, hoje
+    where (a.status = 'inadimplente'
+       or (a.status = 'ativa' and a.vence_em < hoje.d)
+       or (a.status = 'trial' and a.vence_em <= hoje.d + 3)) ${f.doProduto("a.produto_id")}
+    order by a.vence_em nulls first limit 10`;
+}
+
+// Etiqueta de um alerta de cliente: [classe de cor, texto].
+export function alertaTag(tipo: string, dias: number | null): [string, string] {
+  if (tipo === "inadimplente") return ["ruim", "Inadimplente"];
+  const n = Number(dias ?? 0);
+  if (tipo === "atrasado") return ["ruim", n === -1 ? "Pagamento 1 dia atrasado" : `Pagamento ${-n} dias atrasado`];
+  if (n < 0) return ["ruim", "Teste acabou"];
+  if (n === 0) return ["alerta", "Teste acaba hoje"];
+  return ["alerta", n === 1 ? "Teste acaba amanhã" : `Teste acaba em ${n} dias`];
+}
