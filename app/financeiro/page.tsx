@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, brl, pct, rotuloMes, data, type Busca } from "@/lib/filtro";
-import { Topo, Painel, Barras, Vazio, Blocos, Indicadores } from "@/components/ui";
+import { Topo, Painel, Kpis, Barras, Vazio } from "@/components/ui";
 import { SeletorProduto } from "@/components/form";
 import { lancarCusto } from "../actions";
 
@@ -34,35 +34,20 @@ export default async function Financeiro({ searchParams }: { searchParams: Busca
 
   return (
     <>
-      <Topo titulo="Financeiro · mês atual"
-        hero={{ rotulo: "Resultado do mês", valor: brl(resultado), delta: `margem ${pct(resultado, receita)}%`, deltaNeg: resultado < 0,
-          serie: meses.map((m) => Number(m.receita) - Number(m.custos)) }}
-        direita={<Blocos titulo="Composição do mês" itens={[
-          { n: brl(receita), nome: "receita" }, { n: brl(k.custos), nome: "custos" }, { n: brl(k.mrr), nome: "MRR", destaque: true },
-        ]} />} />
-      <div className="corpo">
-        <Indicadores itens={[
-          ["Clientes ativos", String(k.ativos), "assinaturas pagas", false, "pessoas"],
-          ["Ticket médio", brl(k.ativos ? Number(k.mrr) / k.ativos : 0), "por cliente, por mês", false, "ticket"],
-          ["Cancelamentos", String(k.cancel), "neste mês", k.cancel > 0, "saida"],
-          ["Churn do mês", `${pct(k.cancel, k.ativos + k.cancel)}%`, "clientes que saíram", k.cancel > 0, "alerta"],
-        ]} />
-        <div className="g duas">
+      <Topo titulo="Financeiro" sub="Receita, custos e resultado" />
+      <div className="g hero">
         <Painel titulo="Receita x custos" desc="Pagamentos aprovados e custos lançados, por mês">
           <Barras a={meses.map((m) => Number(m.receita))} b={meses.map((m) => Number(m.custos))} rotulos={meses.map((m) => rotuloMes(m.mes))} />
         </Painel>
-        <Painel titulo="Assinaturas por plano" desc="Clientes ativos hoje">
-          {planos.length === 0 ? <Vazio>Nenhuma assinatura ativa ainda.</Vazio> : (
-            <table>
-              <thead><tr><th>Plano</th><th className="n">Clientes</th><th className="n">MRR</th></tr></thead>
-              <tbody>{planos.map((p) => (
-                <tr key={p.plano}><td>{p.plano}</td><td className="n">{p.clientes}</td><td className="n">{brl(p.mrr, true)}</td></tr>
-              ))}</tbody>
-            </table>
-          )}
+        <Painel titulo="Resumo do mês" desc="Mês atual">
+          <Kpis itens={[
+            ["MRR", brl(k.mrr)], ["Ticket médio", brl(k.ativos ? Number(k.mrr) / k.ativos : 0)],
+            ["Resultado", brl(resultado), resultado < 0], ["Margem", `${pct(resultado, receita)}%`, resultado < 0],
+            ["Cancelamentos", String(k.cancel), k.cancel > 0], ["Churn", `${pct(k.cancel, k.ativos + k.cancel)}%`, k.cancel > 0],
+          ]} />
         </Painel>
-        </div>
-      <div className="g">
+      </div>
+      <div className="g duas">
         <Painel titulo="Custos do mês" desc="Lance cada gasto para ver o resultado real">
           <form action={lancarCusto} className="acao">
             <select name="categoria" required defaultValue="" aria-label="Categoria">
@@ -87,7 +72,16 @@ export default async function Financeiro({ searchParams }: { searchParams: Busca
             </table>
           )}
         </Painel>
-      </div>
+        <Painel titulo="Assinaturas por plano" desc="Clientes ativos hoje">
+          {planos.length === 0 ? <Vazio>Nenhuma assinatura ativa ainda.</Vazio> : (
+            <table>
+              <thead><tr><th>Plano</th><th className="n">Clientes</th><th className="n">MRR</th></tr></thead>
+              <tbody>{planos.map((p) => (
+                <tr key={p.plano}><td>{p.plano}</td><td className="n">{p.clientes}</td><td className="n">{brl(p.mrr, true)}</td></tr>
+              ))}</tbody>
+            </table>
+          )}
+        </Painel>
       </div>
     </>
   );

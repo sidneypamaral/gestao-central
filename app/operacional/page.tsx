@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { lerFiltro, type Busca } from "@/lib/filtro";
-import { Topo, Painel, Vazio, Blocos } from "@/components/ui";
+import { Topo, Painel, Kpis, Vazio } from "@/components/ui";
 import { SeletorProduto } from "@/components/form";
 import { prazoTag } from "@/lib/consultas";
 import { criarTarefa, concluirTarefa } from "../actions";
@@ -23,13 +23,8 @@ export default async function Operacional({ searchParams }: { searchParams: Busc
 
   return (
     <>
-      <Topo titulo="Operacional · tarefas e suporte"
-        hero={{ rotulo: "Tarefas abertas", valor: String(k.abertas), delta: k.atrasadas ? `${k.atrasadas} atrasada${k.atrasadas > 1 ? "s" : ""}` : "nada atrasado", deltaNeg: k.atrasadas > 0 }}
-        direita={<Blocos titulo="Situação" itens={[
-          { n: k.atrasadas, nome: "atrasadas", neg: k.atrasadas > 0 }, { n: k.hoje, nome: "para hoje" }, { n: k.suporte, nome: "suporte" },
-        ]} />} />
-      <div className="corpo">
-      <div className="g">
+      <Topo titulo="Operacional" sub="Tarefas do dia a dia e suporte" />
+      <div className="g lado">
         <Painel titulo="Tarefas e suporte" desc="Abertas, da mais urgente para a menos urgente">
           <form action={criarTarefa} className="acao">
             <input name="titulo" placeholder="Nova tarefa" required aria-label="Nova tarefa" />
@@ -54,7 +49,12 @@ export default async function Operacional({ searchParams }: { searchParams: Busc
             </table></div>
           )}
         </Painel>
-      </div>
+        <Painel titulo="Resumo" desc="Tarefas em aberto">
+          <Kpis itens={[
+            ["Abertas", String(k.abertas)], ["Atrasadas", String(k.atrasadas), k.atrasadas > 0],
+            ["Para hoje", String(k.hoje)], ["Suporte", String(k.suporte)],
+          ]} />
+        </Painel>
       </div>
     </>
   );

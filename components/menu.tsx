@@ -3,20 +3,30 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+const ICONES: Record<string, string> = {
+  "/": "M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z",
+  "/financeiro": "M3 17l5-5 4 4 8-8M15 8h5v5",
+  "/comercial": "M3 4h18l-7 8v6l-4 2v-8z",
+  "/marketing": "M3 11v2l13 5V6zM16 9a3 3 0 010 6M6 14l1 5h3l-1-4",
+  "/operacional": "M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9",
+  "/produtos": "M8 3v4M16 3v4M6 7h12v4a6 6 0 01-12 0zM12 17v4",
+};
 const PAGINAS: [string, string][] = [
   ["/", "Visão geral"], ["/financeiro", "Financeiro"], ["/comercial", "Comercial"],
-  ["/marketing", "Marketing"], ["/operacional", "Operacional"], ["/produtos", "Sistemas"],
+  ["/marketing", "Marketing"], ["/operacional", "Operacional"], ["/produtos", "Sistemas conectados"],
 ];
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function Links() {
   const caminho = usePathname();
-  const p = useSearchParams().get("produto") ?? "";
-  const q = UUID.test(p) ? `?${new URLSearchParams({ produto: p })}` : "";
+  const busca = useSearchParams();
+  const p = busca.get("produto") ?? "";
+  const produto = /^[0-9a-f-]{36}$/i.test(p) ? p : null;
   return (
-    <nav className="menu" aria-label="Módulos">
+    <nav className="links" aria-label="Módulos">
       {PAGINAS.map(([href, nome]) => (
-        <Link key={href} href={href + q} className={caminho === href ? "on" : ""} aria-current={caminho === href ? "page" : undefined}>{nome}</Link>
+        <Link key={href} href={produto ? `${href}?produto=${produto}` : href} className={caminho === href ? "on" : ""} aria-current={caminho === href ? "page" : undefined}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d={ICONES[href]} /></svg>{nome}
+        </Link>
       ))}
     </nav>
   );
@@ -27,7 +37,7 @@ function Sistema({ produtos }: { produtos: { id: string; nome: string }[] }) {
   const caminho = usePathname();
   const busca = useSearchParams();
   return (
-    <select className="sis" aria-label="Sistema" value={busca.get("produto") ?? ""}
+    <select className="sistema" aria-label="Sistema" value={busca.get("produto") ?? ""}
       onChange={(e) => {
         const q = new URLSearchParams(busca.toString());
         if (e.target.value) q.set("produto", e.target.value); else q.delete("produto");
@@ -39,7 +49,6 @@ function Sistema({ produtos }: { produtos: { id: string; nome: string }[] }) {
   );
 }
 
-// Claro é o padrão; o escuro só liga se a pessoa escolher (fica salvo no navegador).
 function Tema() {
   const [t, setT] = useState("light");
   useEffect(() => { try { setT(localStorage.getItem("tema") === "dark" ? "dark" : "light"); } catch {} }, []);
@@ -57,17 +66,17 @@ function Tema() {
   );
 }
 
-// Inclina levemente os cartões em relevo ao passar o mouse (efeito 3D). Desligado no celular e para quem prefere menos movimento.
+// Inclina levemente os cartões ao passar o mouse (efeito 3D). Desligado no celular e para quem prefere menos movimento.
 function Inclinar() {
   const caminho = usePathname();
   const busca = useSearchParams().toString();
   useEffect(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches || matchMedia("(hover: none)").matches) return;
-    const cards = Array.from(document.querySelectorAll<HTMLElement>(".rel"));
+    const cards = Array.from(document.querySelectorAll<HTMLElement>("main .p"));
     const mover = (e: MouseEvent) => {
       const c = e.currentTarget as HTMLElement, r = c.getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-      c.style.transform = `perspective(1000px) rotateX(${-y * 4}deg) rotateY(${x * 4}deg) translateY(-3px)`;
+      c.style.transform = `rotateX(${-y * 3}deg) rotateY(${x * 3}deg) translateY(-3px)`;
     };
     const sair = (e: MouseEvent) => { (e.currentTarget as HTMLElement).style.transform = ""; };
     cards.forEach((c) => { c.addEventListener("mousemove", mover); c.addEventListener("mouseleave", sair); });
@@ -76,16 +85,16 @@ function Inclinar() {
   return null;
 }
 
-export function Barra({ produtos }: { produtos: { id: string; nome: string }[] }) {
+export function Menu({ produtos }: { produtos: { id: string; nome: string }[] }) {
   return (
-    <header className="barra">
-      <Link href="/" className="marca"><b aria-hidden="true">C</b><span>CENTRAL</span></Link>
-      <Suspense><Links /></Suspense>
-      <div className="ctl">
-        <Suspense><Sistema produtos={produtos} /></Suspense>
-        <Tema />
-      </div>
+    <aside>
+      <div className="marca"><div className="cubo" aria-hidden="true">C</div><span>Central de Gestão<small>Todos os seus SaaS em um lugar</small></span></div>
+      <Suspense>
+        <Sistema produtos={produtos} />
+        <Links />
+      </Suspense>
+      <Tema />
       <Suspense><Inclinar /></Suspense>
-    </header>
+    </aside>
   );
 }
