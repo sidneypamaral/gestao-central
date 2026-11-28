@@ -10,7 +10,9 @@ export async function Topo({ titulo, sub, direita, children }: { titulo: string;
   let produtos: { id: string; nome: string }[] = [];
   try {
     produtos = (await sql`select id, nome from gestao.produtos order by nome`) as unknown as typeof produtos;
-  } catch {}
+  } catch (e) {
+    console.error("Topo: não consegui listar os sistemas", e);
+  }
   return (
     <section className="banda">
       <Barra produtos={produtos} />

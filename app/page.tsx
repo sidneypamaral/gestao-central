@@ -18,7 +18,11 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
       (select coalesce(sum(valor),0) from gestao.custos where competencia >= date_trunc('month', now()) ${P()}) as custos,
       (select count(*) from gestao.custos where competencia >= date_trunc('month', now()) ${P()})::int as n_custos,
       (select count(*) from gestao.assinaturas where status = 'cancelada' and cancelada_em >= date_trunc('month', now()) ${P()})::int as cancel,
-      (select count(*) from gestao.tarefas where status <> 'concluida' and prazo < (now() at time zone 'America/Sao_Paulo')::date ${P()})::int as atrasadas`,
+      (select count(*) from gestao.tarefas where status <> 'concluida' and prazo < (now() at time zone 'America/Sao_Paulo')::date ${P()})::int as atrasadas,
+      (select count(*) from gestao.assinaturas where (status = 'inadimplente'
+         or (status = 'ativa' and vence_em < (now() at time zone 'America/Sao_Paulo')::date)) ${P()})::int as cobrar,
+      (select count(*) from gestao.assinaturas where status = 'trial'
+         and vence_em between (now() at time zone 'America/Sao_Paulo')::date and (now() at time zone 'America/Sao_Paulo')::date + 3 ${P()})::int as testes`,
     mrrMensal(f),
     dadosLeads(f),
     sql`select titulo, tipo, prazo from gestao.tarefas where status <> 'concluida' ${P()}
@@ -38,8 +42,7 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
   ];
 
   // Próximo passo: a ação mais urgente, calculada a partir dos dados.
-  const cobrar = alertas.filter((a) => a.tipo !== "teste").length;
-  const testes = alertas.filter((a) => a.tipo === "teste").length;
+  const { cobrar, testes } = k;
   const passo =
     cobrar ? { titulo: `Cobre ${plural(cobrar, "cliente com pagamento atrasado", "clientes com pagamento atrasado")}`, motivo: "Receita que já deveria ter entrado.", href: "#atencao", acao: "Ver quem" }
     : k.atrasadas ? { titulo: `Resolva ${plural(k.atrasadas, "tarefa atrasada", "tarefas atrasadas")}`, motivo: "Passaram do prazo combinado.", href: `/operacional${q}`, acao: "Ver tarefas" }
@@ -57,7 +60,7 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Busca
 
   return (
     <>
-      <Topo titulo="Visão geral" sub={`Do lead ao cliente, nos últimos ${f.dias} dias`} direita={<Periodo dias={f.dias} produto={f.produto} caminho="/" />}>
+      <Topo titulo="Visão geral" sub={`Do lead ao cliente, nos últimos ${f.dias} dias (pela etapa atual de cada lead)`} direita={<Periodo dias={f.dias} produto={f.produto} caminho="/" />}>
         <Destaques itens={jornada} etapas />
         <ProximoPasso {...passo} />
       </Topo>
