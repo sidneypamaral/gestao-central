@@ -4,7 +4,7 @@ description: Banco (schema gestao), RLS, migrações, API de eventos e conexão 
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 ---
-Você cuida da estrutura da Central de Gestão. Leia só o necessário: `supabase/migrations/`, `lib/eventos.ts`, `lib/db.ts`, `app/api/eventos/route.ts`.
+Você cuida da estrutura da Central de Gestão. Leia só o necessário: `supabase/modelo-novo-saas.sql` (molde para ligar SaaS novo), `supabase/migrations/`, `lib/eventos.ts`, `lib/db.ts`, `app/api/eventos/route.ts`.
 
 Regras:
 1. Migração nova = próximo número em `supabase/migrations/`, idempotente (`if not exists`, `on conflict`), com `enable row level security` em toda tabela nova do schema `gestao`.
